@@ -1,7 +1,8 @@
 * Convert ICD codes for cause-specific mortality to 1/0;
+* Convert sex and race code to M/F and A/B/H/N/W/O;
 
-libname raw '/scratch/fatemehkp/projects/data/raw';
-libname prcs '/scratch/fatemehkp/projects/data/processed';
+libname raw '/scratch/fatemehkp/projects/CMS/data/raw';
+libname prcs '/scratch/fatemehkp/projects/CMS/data/processed';
 
 ods html close;
 ods listing;
@@ -23,13 +24,10 @@ data prcs.enrollee65_ndi_0008_clean;
 	if bene_death_dt ne . and month(bene_death_dt)=month then allcuz = 1;
 		else allcuz = 0;
 
-	if bene_death_dt ne . and month(bene_death_dt)=month then
-		if substr(ICD_CODE,1,1) in ('U','V','W','X','Y','Z') then nacc = 0;
-			else nacc = 1;
-		else nacc = 0; 
-
 	if substr(ICD_CODE,1,1) in ('U','V','W','X','Y','Z') then acc = 1;
 		else acc = 0;
+		 
+	nacc = allcuz - acc;
 	
 * CVD;
 	if substr(ICD_CODE,1,1) in ('I') then cvd = 1;
@@ -128,17 +126,18 @@ data prcs.enrollee65_ndi_0008_clean;
 	   substr(RECORD_COND_4,1,1) in ('J') then resp_rc = 1;
 	else resp_rc = 0;
 
+	if substr(RECORD_COND_1,1,3) in ('J40','J41','J42','J43','J44') or 
+	   substr(RECORD_COND_2,1,3) in ('J40','J41','J42','J43','J44') or 
+	   substr(RECORD_COND_3,1,3) in ('J40','J41','J42','J43','J44') or
+	   substr(RECORD_COND_4,1,3) in ('J40','J41','J42','J43','J44') then copd_rc = 1;
+	else copd_rc = 0;
+	
 	if substr(RECORD_COND_1,1,3) in ('J12','J13','J14','J15','J16','J17','J18') or 
 	   substr(RECORD_COND_2,1,3) in ('J12','J13','J14','J15','J16','J17','J18') or 
 	   substr(RECORD_COND_3,1,3) in ('J12','J13','J14','J15','J16','J17','J18') or
 	   substr(RECORD_COND_4,1,3) in ('J12','J13','J14','J15','J16','J17','J18') then pneu_rc = 1;
 	else pneu_rc = 0;
 	
-	if substr(RECORD_COND_1,1,3) in ('J40','J41','J42','J43','J44') or 
-	   substr(RECORD_COND_2,1,3) in ('J40','J41','J42','J43','J44') or 
-	   substr(RECORD_COND_3,1,3) in ('J40','J41','J42','J43','J44') or
-	   substr(RECORD_COND_4,1,3) in ('J40','J41','J42','J43','J44') then copd_rc = 1;
-	else copd_rc = 0;
 
 	if substr(RECORD_COND_1,1,3) in ('J00','J01','J02','J03','J04','J05','J06') or 
 	   substr(RECORD_COND_2,1,3) in ('J00','J01','J02','J03','J04','J05','J06') or 
@@ -223,8 +222,7 @@ data prcs.enrollee65_ndi_0008_clean;
 				else if bene_race_cd = 5 then race ='H';
 					else if bene_race_cd = 6 then race ='N';
 						else race='O';
-    
-    if enrollee_age ge 90 then enrollee_age = 90;
+   
 	drop bene_sex_ident_cd bene_race_cd ;
 run;
 
