@@ -16,6 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r load data}
 load(here('data', 'raw','cms-icd-rc.RDa'))
+load(here('data', 'processed', 'cms-icd-rc-decoded.RDa'))
 ```
 
 ```{r}
@@ -160,3 +161,8 @@ dt.cms.icd.rc.decoded %>%
   group_by(RECORD_COND_1_sub) %>% 
   summarise(n = n())
 ```
+
+
+
+
+xxxx
