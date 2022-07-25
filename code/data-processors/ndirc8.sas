@@ -1,9 +1,11 @@
 * Convert ICD codes for cause-specific mortality to 1/0;
 * Convert sex and race code to M/F and A/B/H/N/W/O;
+* Add ses, pm, no2, urbanicity, ses caregory and brfss data;
 
 libname raw '/scratch/fatemehkp/projects/CMS/data/raw';
 libname prcs '/scratch/fatemehkp/projects/CMS/data/processed';
-libname spt '/scratch/fatemehkp/projects/USA Spatial/data/processed';
+libname air '/scratch/fatemehkp/projects/Zipcode PM NO2/data/processed';
+libname ses '/scratch/fatemehkp/projects/USA Spatial/data/processed';
 
 ods html close;
 ods listing;
@@ -18,9 +20,8 @@ data enrollee_ndi;
 		 RECORD_COND_5 RECORD_COND_6 RECORD_COND_7 RECORD_COND_8;
 run;
 
-data prcs.enrollee65_ndi_0008_clean; 
+data prcs.enrollee65_ndi_0008_clean_rc8; 
 	set enrollee_ndi;
-	
 * ICD_CODE;
 * All Cause;
 	if bene_death_dt ne . and month(bene_death_dt)=month then allcuz = 1;
@@ -68,11 +69,7 @@ data prcs.enrollee65_ndi_0008_clean;
 		else lungc = 0;
 	
 * Sepsis;
-	if substr(ICD_CODE,1,3) in ('A40','A41','R65.20','R65.21') then seps = 1;
-		else seps = 0;
 	if substr(ICD_CODE,1,3) in ('A40','A41') then seps = 1;
-		else seps = 0;
-	if substr(ICD_CODE,1,3) in ('R65.20','R65.21') then seps = 1;
 		else seps = 0;
 
 * Dementia;
@@ -100,113 +97,181 @@ data prcs.enrollee65_ndi_0008_clean;
 		else kidn = 0;
 		
 * 1 - 8 Underlying Cause of Death;
-* CVD;
+*CVD;
 	if substr(RECORD_COND_1,1,1) in ('I') or 
 	   substr(RECORD_COND_2,1,1) in ('I') or 
 	   substr(RECORD_COND_3,1,1) in ('I') or
-	   substr(RECORD_COND_4,1,1) in ('I') then cvd_rc = 1;
+	   substr(RECORD_COND_4,1,1) in ('I') or
+	   substr(RECORD_COND_5,1,1) in ('I') or
+	   substr(RECORD_COND_6,1,1) in ('I') or
+	   substr(RECORD_COND_7,1,1) in ('I') or
+	   substr(RECORD_COND_8,1,1) in ('I') then cvd_rc = 1;
 	else cvd_rc = 0;
 
 	if substr(RECORD_COND_1,1,3) in ('I20','I21','I22','I23','I24','I25') or 
 	   substr(RECORD_COND_2,1,3) in ('I20','I21','I22','I23','I24','I25') or 
 	   substr(RECORD_COND_3,1,3) in ('I20','I21','I22','I23','I24','I25') or
-	   substr(RECORD_COND_4,1,3) in ('I20','I21','I22','I23','I24','I25') then ihd_rc = 1;
+	   substr(RECORD_COND_4,1,3) in ('I20','I21','I22','I23','I24','I25') or
+	   substr(RECORD_COND_5,1,3) in ('I20','I21','I22','I23','I24','I25') or
+	   substr(RECORD_COND_6,1,3) in ('I20','I21','I22','I23','I24','I25') or
+	   substr(RECORD_COND_7,1,3) in ('I20','I21','I22','I23','I24','I25') or
+	   substr(RECORD_COND_8,1,3) in ('I20','I21','I22','I23','I24','I25') then ihd_rc = 1;
 	else ihd_rc = 0;
 	
 	if substr(RECORD_COND_1,1,3) in ('I50') or 
 	   substr(RECORD_COND_2,1,3) in ('I50') or 
 	   substr(RECORD_COND_3,1,3) in ('I50') or
-	   substr(RECORD_COND_4,1,3) in ('I50') then chf_rc = 1;
+	   substr(RECORD_COND_4,1,3) in ('I50') or
+	   substr(RECORD_COND_5,1,3) in ('I50') or
+	   substr(RECORD_COND_6,1,3) in ('I50') or
+	   substr(RECORD_COND_7,1,3) in ('I50') or
+	   substr(RECORD_COND_8,1,3) in ('I50') then chf_rc = 1;
 	else chf_rc = 0;
 	
 	if substr(RECORD_COND_1,1,2) in ('I6') or 
 	   substr(RECORD_COND_2,1,2) in ('I6') or 
 	   substr(RECORD_COND_3,1,2) in ('I6') or
-	   substr(RECORD_COND_4,1,2) in ('I6') then cbv_rc = 1;
+	   substr(RECORD_COND_4,1,2) in ('I6') or
+	   substr(RECORD_COND_5,1,2) in ('I6') or
+	   substr(RECORD_COND_6,1,2) in ('I6') or
+	   substr(RECORD_COND_7,1,2) in ('I6') or
+	   substr(RECORD_COND_8,1,2) in ('I6') then cbv_rc = 1;
 	else cbv_rc = 0;
 
 * Respiratory;
 	if substr(RECORD_COND_1,1,1) in ('J') or 
 	   substr(RECORD_COND_2,1,1) in ('J') or 
 	   substr(RECORD_COND_3,1,1) in ('J') or
-	   substr(RECORD_COND_4,1,1) in ('J') then resp_rc = 1;
+	   substr(RECORD_COND_4,1,1) in ('J') or
+	   substr(RECORD_COND_5,1,1) in ('J') or
+	   substr(RECORD_COND_6,1,1) in ('J') or
+	   substr(RECORD_COND_7,1,1) in ('J') or
+	   substr(RECORD_COND_8,1,1) in ('J') then resp_rc = 1;
 	else resp_rc = 0;
 
 	if substr(RECORD_COND_1,1,3) in ('J40','J41','J42','J43','J44') or 
 	   substr(RECORD_COND_2,1,3) in ('J40','J41','J42','J43','J44') or 
 	   substr(RECORD_COND_3,1,3) in ('J40','J41','J42','J43','J44') or
-	   substr(RECORD_COND_4,1,3) in ('J40','J41','J42','J43','J44') then copd_rc = 1;
+	   substr(RECORD_COND_4,1,3) in ('J40','J41','J42','J43','J44') or
+	   substr(RECORD_COND_5,1,3) in ('J40','J41','J42','J43','J44') or
+	   substr(RECORD_COND_6,1,3) in ('J40','J41','J42','J43','J44') or
+	   substr(RECORD_COND_7,1,3) in ('J40','J41','J42','J43','J44') or
+	   substr(RECORD_COND_8,1,3) in ('J40','J41','J42','J43','J44') then copd_rc = 1;
 	else copd_rc = 0;
 	
 	if substr(RECORD_COND_1,1,3) in ('J12','J13','J14','J15','J16','J17','J18') or 
 	   substr(RECORD_COND_2,1,3) in ('J12','J13','J14','J15','J16','J17','J18') or 
 	   substr(RECORD_COND_3,1,3) in ('J12','J13','J14','J15','J16','J17','J18') or
-	   substr(RECORD_COND_4,1,3) in ('J12','J13','J14','J15','J16','J17','J18') then pneu_rc = 1;
+	   substr(RECORD_COND_4,1,3) in ('J12','J13','J14','J15','J16','J17','J18') or
+	   substr(RECORD_COND_5,1,3) in ('J12','J13','J14','J15','J16','J17','J18') or
+	   substr(RECORD_COND_6,1,3) in ('J12','J13','J14','J15','J16','J17','J18') or
+	   substr(RECORD_COND_7,1,3) in ('J12','J13','J14','J15','J16','J17','J18') or
+	   substr(RECORD_COND_8,1,3) in ('J12','J13','J14','J15','J16','J17','J18') then pneu_rc = 1;
 	else pneu_rc = 0;
 	
 
 	if substr(RECORD_COND_1,1,3) in ('J00','J01','J02','J03','J04','J05','J06') or 
 	   substr(RECORD_COND_2,1,3) in ('J00','J01','J02','J03','J04','J05','J06') or 
 	   substr(RECORD_COND_3,1,3) in ('J00','J01','J02','J03','J04','J05','J06') or
-	   substr(RECORD_COND_4,1,3) in ('J00','J01','J02','J03','J04','J05','J06') then uri_rc = 1;
+	   substr(RECORD_COND_4,1,3) in ('J00','J01','J02','J03','J04','J05','J06') or
+	   substr(RECORD_COND_5,1,3) in ('J00','J01','J02','J03','J04','J05','J06') or
+	   substr(RECORD_COND_6,1,3) in ('J00','J01','J02','J03','J04','J05','J06') or
+	   substr(RECORD_COND_7,1,3) in ('J00','J01','J02','J03','J04','J05','J06') or
+	   substr(RECORD_COND_8,1,3) in ('J00','J01','J02','J03','J04','J05','J06') then uri_rc = 1;
 	else uri_rc = 0;
 	
 	if substr(RECORD_COND_1,1,3) in ('J80') or 
 	   substr(RECORD_COND_2,1,3) in ('J80') or 
 	   substr(RECORD_COND_3,1,3) in ('J80') or
-	   substr(RECORD_COND_4,1,3) in ('J80') then ards_rc = 1;
+	   substr(RECORD_COND_4,1,3) in ('J80') or
+	   substr(RECORD_COND_5,1,3) in ('J80') or
+	   substr(RECORD_COND_6,1,3) in ('J80') or
+	   substr(RECORD_COND_7,1,3) in ('J80') or
+	   substr(RECORD_COND_8,1,3) in ('J80') then ards_rc = 1;
 	else ards_rc = 0;
 
 * Sepsis;
 	if substr(RECORD_COND_1,1,3) in ('A40','A41') or 
 	   substr(RECORD_COND_2,1,3) in ('A40','A41') or 
 	   substr(RECORD_COND_3,1,3) in ('A40','A41') or
-	   substr(RECORD_COND_4,1,3) in ('A40','A41') then seps_rc = 1;
+	   substr(RECORD_COND_4,1,3) in ('A40','A41') or
+	   substr(RECORD_COND_5,1,3) in ('A40','A41') or
+	   substr(RECORD_COND_6,1,3) in ('A40','A41') or
+	   substr(RECORD_COND_7,1,3) in ('A40','A41') or
+	   substr(RECORD_COND_8,1,3) in ('A40','A41') then seps_rc = 1;
 	else seps_rc = 0;
 
 * Dementia;
 	if substr(RECORD_COND_1,1,3) in ('F01') or 
 	   substr(RECORD_COND_2,1,3) in ('F01') or 
 	   substr(RECORD_COND_3,1,3) in ('F01') or
-	   substr(RECORD_COND_4,1,3) in ('F01') then VaD_rc = 1;
+	   substr(RECORD_COND_4,1,3) in ('F01') or
+	   substr(RECORD_COND_5,1,3) in ('F01') or
+	   substr(RECORD_COND_6,1,3) in ('F01') or
+	   substr(RECORD_COND_7,1,3) in ('F01') or
+	   substr(RECORD_COND_8,1,3) in ('F01') then VaD_rc = 1;
 	else VaD_rc = 0;
 
 	if substr(RECORD_COND_1,1,3) in ('G30') or 
 	   substr(RECORD_COND_2,1,3) in ('G30') or 
 	   substr(RECORD_COND_3,1,3) in ('G30') or
-	   substr(RECORD_COND_4,1,3) in ('G30') then AD_rc = 1;
+	   substr(RECORD_COND_4,1,3) in ('G30') or
+	   substr(RECORD_COND_5,1,3) in ('G30') or
+	   substr(RECORD_COND_6,1,3) in ('G30') or
+	   substr(RECORD_COND_7,1,3) in ('G30') or
+	   substr(RECORD_COND_8,1,3) in ('G30') then AD_rc = 1;
 	else AD_rc = 0;
 
 	if substr(RECORD_COND_1,1,3) in ('G31') or 
 	   substr(RECORD_COND_2,1,3) in ('G31') or 
 	   substr(RECORD_COND_3,1,3) in ('G31') or
-	   substr(RECORD_COND_4,1,3) in ('G31') then NeD_rc = 1;
+	   substr(RECORD_COND_4,1,3) in ('G31') or
+	   substr(RECORD_COND_5,1,3) in ('G31') or
+	   substr(RECORD_COND_6,1,3) in ('G31') or
+	   substr(RECORD_COND_7,1,3) in ('G31') or
+	   substr(RECORD_COND_8,1,3) in ('G31') then NeD_rc = 1;
 	else NeD_rc = 0;
 
 	if substr(RECORD_COND_1,1,3) in ('F03') or 
 	   substr(RECORD_COND_2,1,3) in ('F03') or 
 	   substr(RECORD_COND_3,1,3) in ('F03') or
-	   substr(RECORD_COND_4,1,3) in ('F03') then UsD_rc = 1;
+	   substr(RECORD_COND_4,1,3) in ('F03') or
+	   substr(RECORD_COND_5,1,3) in ('F03') or
+	   substr(RECORD_COND_6,1,3) in ('F03') or
+	   substr(RECORD_COND_7,1,3) in ('F03') or
+	   substr(RECORD_COND_8,1,3) in ('F03') then UsD_rc = 1;
 	else UsD_rc = 0;
 
 * Diabete;
 	if substr(RECORD_COND_1,1,3) in ('E10') or 
 	   substr(RECORD_COND_2,1,3) in ('E10') or 
 	   substr(RECORD_COND_3,1,3) in ('E10') or
-	   substr(RECORD_COND_4,1,3) in ('E10') then diabt1_rc = 1;
+	   substr(RECORD_COND_4,1,3) in ('E10') or
+	   substr(RECORD_COND_5,1,3) in ('E10') or
+	   substr(RECORD_COND_6,1,3) in ('E10') or
+	   substr(RECORD_COND_7,1,3) in ('E10') or
+	   substr(RECORD_COND_8,1,3) in ('E10') then diabt1_rc = 1;
 	else diabt1_rc = 0;
 
 	if substr(RECORD_COND_1,1,3) in ('E11') or 
 	   substr(RECORD_COND_2,1,3) in ('E11') or 
 	   substr(RECORD_COND_3,1,3) in ('E11') or
-	   substr(RECORD_COND_4,1,3) in ('E11') then diabt2_rc = 1;
+	   substr(RECORD_COND_4,1,3) in ('E11') or
+	   substr(RECORD_COND_5,1,3) in ('E11') or
+	   substr(RECORD_COND_6,1,3) in ('E11') or
+	   substr(RECORD_COND_7,1,3) in ('E11') or
+	   substr(RECORD_COND_8,1,3) in ('E11') then diabt2_rc = 1;
 	else diabt2_rc = 0;
 
 * Kidney;
 	if substr(RECORD_COND_1,1,3) in ('N18','N19') or 
 	   substr(RECORD_COND_2,1,3) in ('N18','N19') or 
 	   substr(RECORD_COND_3,1,3) in ('N18','N19') or
-	   substr(RECORD_COND_4,1,3) in ('N18','N19') then kidn_rc = 1;
+	   substr(RECORD_COND_4,1,3) in ('N18','N19') or
+	   substr(RECORD_COND_5,1,3) in ('N18','N19') or
+	   substr(RECORD_COND_6,1,3) in ('N18','N19') or
+	   substr(RECORD_COND_7,1,3) in ('N18','N19') or
+	   substr(RECORD_COND_8,1,3) in ('N18','N19') then kidn_rc = 1;
 	else kidn_rc = 0;
 
 	drop BENE_DEATH_DT ICD_CODE
@@ -215,9 +280,9 @@ data prcs.enrollee65_ndi_0008_clean;
 run;
 
 
-data prcs.enrollee65_ndi_0008_clean; 
+data prcs.enrollee65_ndi_0008_clean_rc8; 
 	length sex $1 race $2; 
-	set prcs.enrollee65_ndi_0008_clean;
+	set prcs.enrollee65_ndi_0008_clean_rc8;
 	if bene_sex_ident_cd = 1 then sex ='M';
 		else if bene_sex_ident_cd = 2 then sex ='F';
 			else sex='U';
@@ -235,9 +300,9 @@ run;
 
 * Add SES data;
 proc sql;
-	create table prcs.enrollee65_ndi_0008_clean as
+	create table prcs.enrollee65_ndi_0008_clean_rc8 as
 	select *
-	from prcs.enrollee65_ndi_0008_clean a
+	from prcs.enrollee65_ndi_0008_clean_rc8 a
 	left join ses.ses_zipcd b
 	on a.zip_code=b.zip_code and a.year=b.year;
 quit;
@@ -245,9 +310,9 @@ quit;
 
 * Add PM data;
 proc sql;
-	create table prcs.enrollee65_ndi_0008_clean as
+	create table prcs.enrollee65_ndi_0008_clean_rc8 as
 	select *
-	from prcs.enrollee65_ndi_0008_clean a 
+	from prcs.enrollee65_ndi_0008_clean_rc8 a 
 	left join air.pm_zipcd b
 	on a.zip_code=b.zip_code and a.year=b.year and a.month=b.month;
 quit;
@@ -255,9 +320,9 @@ quit;
 
 * Add NO2 data;
 proc sql;
-	create table prcs.enrollee65_ndi_0008_clean as
+	create table prcs.enrollee65_ndi_0008_clean_rc8 as
 	select *
-	from prcs.enrollee65_ndi_0008_clean a 
+	from prcs.enrollee65_ndi_0008_clean_rc8 a 
 	left join air.no2_zipcd b
 	on a.zip_code=b.zip_code and a.year=b.year and a.month=b.month;
 quit;
@@ -265,9 +330,9 @@ quit;
 
 * Add Urbanicity data;
 proc sql;
-	create table prcs.enrollee65_ndi_0008_clean as
+	create table prcs.enrollee65_ndi_0008_clean_rc8 as
 	select *
-	from prcs.enrollee65_ndi_0008_clean a
+	from prcs.enrollee65_ndi_0008_clean_rc8 a
 	left join ses.urbanicity_zipcd b
 	on a.zip_code=b.zip_code;
 quit;
@@ -275,9 +340,9 @@ quit;
 
 * Add SES category data;
 proc sql;
-	create table prcs.enrollee65_ndi_0008_clean as
+	create table prcs.enrollee65_ndi_0008_clean_rc8 as
 	select a.*, b.ses_tertile
-	from prcs.enrollee65_ndi_0008_clean a
+	from prcs.enrollee65_ndi_0008_clean_rc8 a
 	left join ses.ses_zipcd_urban_cat b
 	on a.zip_code=b.zip_code and a.year=b.year;
 quit;
@@ -285,19 +350,9 @@ quit;
 
 * Add BRFSS data;
 proc sql;
-	create table prcs.enrollee65_ndi_0008_clean as
+	create table prcs.enrollee65_ndi_0008_clean_rc8 as
 	select *
-	from prcs.enrollee65_ndi_0008_clean a
+	from prcs.enrollee65_ndi_0008_clean_rc8 a
 	left join ses.brfss_zipcd b
 	on a.zip_code=b.zip_code and a.year=b.year and a.month=b.month;
-quit;
-
-
-* Add Region data; 
-proc sql;
-	create table prcs.enrollee65_ndi_0008_clean as
-	select *
-	from prcs.enrollee65_ndi_0008_clean a
-	left join spt.region_state b
-	on a.state=b.state;
 quit;

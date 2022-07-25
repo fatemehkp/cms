@@ -43,45 +43,47 @@ save(dt.cms.icd.rc, file = here('data', 'raw', 'cms-icd-rc.RDa'))
 ```{r}
 dt <- dt.cms.icd.rc %>%
   mutate(
-    ### ICD main cuases
+    ### ICD main causes
     ICD_CODE_main = 
-      ifelse(str_detect(ICD_CODE, "I"), "cvd",
-             ifelse(str_detect(ICD_CODE, "J"), "resp",
-                    ifelse(str_detect(ICD_CODE, "C|D"), "canc",
-      ifelse(str_detect(ICD_CODE, "A40|A41"), "seps",
-             ifelse(str_detect(ICD_CODE, "F01|F03|G30|G31"), "demn",
-                    ifelse(str_detect(ICD_CODE, "E10|E11"), "diabt",
-                           ifelse(str_detect(ICD_CODE, "N18|N19"), "kidn", 
-                                  as.character(ICD_CODE)))))))),
+      case_when(str_detect(ICD_CODE, "I") ~ "cvd",
+                str_detect(ICD_CODE, "J") ~ "resp",
+                str_detect(ICD_CODE, "C|D") ~ "canc",
+                str_detect(ICD_CODE, "A40|A41") ~ "seps",
+                str_detect(ICD_CODE, "F01|F03|G30|G31") ~ "demn",
+                str_detect(ICD_CODE, "E10|E11") ~ "diabt",
+                str_detect(ICD_CODE, "N18|N19") ~ "kidn", 
+                TRUE ~ as.character(ICD_CODE)),
     ### ICD sub causes
     ICD_CODE_sub = 
-    ### cvd
-      ifelse(str_detect(ICD_CODE, "I20|I21|I22|I23|I24|I25"), "ihd",
-             ifelse(str_detect(ICD_CODE, "I50"), "chf",
-                    ifelse(str_detect(ICD_CODE, "I6"), "cbv",
-    ### resp
-      ifelse(str_detect(ICD_CODE, "J40|J41|J42|J43|J44"), "copd",
-             ifelse(str_detect(ICD_CODE, "J12|J13|J14|J15|J16|J17|J18"), "pneu",
-                    ifelse(str_detect(ICD_CODE, "J00|J01|J02|J03|J04|J05|J06"), "uri",
-                           ifelse(str_detect(ICD_CODE, "J80"), "ards",
+      ### cvd
+      case_when(str_detect(ICD_CODE, "I20|I21|I22|I23|I24|I25") ~ "ihd",
+                str_detect(ICD_CODE, "I50") ~ "chf",
+                str_detect(ICD_CODE, "I6") ~ "cbv",
+      ### resp
+                str_detect(ICD_CODE, "J40|J41|J42|J43|J44") ~ "copd",
+                str_detect(ICD_CODE, "J12|J13|J14|J15|J16|J17|J18") ~ "pneu", 
+                str_detect(ICD_CODE, "J00|J01|J02|J03|J04|J05|J06") ~ "uri",
+                str_detect(ICD_CODE, "J80") ~ "ards",
     ### cancer
-      ifelse(str_detect(ICD_CODE, "C34"), "lungc",  
+    str_detect(ICD_CODE, "C34") ~ "lungc",  
     ### sepsis
-      ifelse(str_detect(ICD_CODE, "A40|A41"), "seps",
+    str_detect(ICD_CODE, "A40|A41") ~ "seps",
     ### dementia
-      ifelse(str_detect(ICD_CODE, "F01"), "VaD",
-             ifelse(str_detect(ICD_CODE, "G30"), "AD",
-                    ifelse(str_detect(ICD_CODE, "G31"), "NeD",
-                           ifelse(str_detect(ICD_CODE, "F03"), "UsD",
+    str_detect(ICD_CODE, "F01") ~ "VaD",
+    str_detect(ICD_CODE, "G30") ~ "AD",
+    str_detect(ICD_CODE, "G31") ~ "NeD",
+    str_detect(ICD_CODE, "F03") ~ "UsD",
     ### diabetes
-      ifelse(str_detect(ICD_CODE, "E10"), "diabt1",
-             ifelse(str_detect(ICD_CODE, "E11"), "diabt2",
+    str_detect(ICD_CODE, "E10") ~ "diabt1",
+    str_detect(ICD_CODE, "E11") ~ "diabt2",
     ### kidney
-       ifelse(str_detect(ICD_CODE, "N18|N19"), "kidn", as.character(ICD_CODE))
-    ))))))))))))))))
+    str_detect(ICD_CODE, "N18|N19") ~ "kidn",
+    TRUE ~ as.character(ICD_CODE))
+    )
 ```
 
 ```{r}
+# done and saved
 for (RCcat in rc.cat){
   ### RC main causes
   dt[,paste0(RCcat,'_main',sep="")] <- 
@@ -162,7 +164,31 @@ dt.cms.icd.rc.decoded %>%
   summarise(n = n())
 ```
 
+```{r}
+dt.cms.icd.rc.decoded %>% 
+  filter(ICD_CODE_main == "seps") %>% # 228828
+  filter(RECORD_COND_1_main == "seps") %>% # 228087
+  nrow()
+
+dt.cms.icd.rc.decoded %>% 
+  filter(RECORD_COND_1_main == "seps") %>% # 700280
+  filter(ICD_CODE_main == "seps") %>% # 228087
+  nrow()
+
+dt.cms.icd.rc.decoded %>% 
+  filter(RECORD_COND_1_main == "seps") %>% # 700280
+  group_by(ICD_CODE_main) %>%
+  summarise(n = n()) %>% 
+  filter(ICD_CODE_main == "kidn") 
+
+# cvd 100133
+# resp 77379
+# canc 73994
+# kidn 17319
 
 
 
-xxxx
+```
+
+
+

@@ -10,7 +10,7 @@ proc sort data=raw.enrollee65_ndi_0008;
 run;
 */
 
-*Remove the incorrect bene_death_dt following the first bene_death_dt;
+* Remove the incorrect bene_death_dt following the first bene_death_dt;
 data death_all; 
 	set raw.enrollee65_ndi_0008(where=(bene_death_dt ne . and month(bene_death_dt)=month));
 	by bene_id bene_enrollmt_ref_yr month;
@@ -30,7 +30,7 @@ proc sql;
 		on a.bene_id=b.bene_id;
 quit;
 
-*Remove the rows after the first bene_death_dt;
+* Remove the rows after the first bene_death_dt;
 data raw.enrollee65_ndi_0008_corrected; 
 	set enrollee65_ndi;
 	if bene_death_dt ne . then do;
@@ -39,7 +39,7 @@ data raw.enrollee65_ndi_0008_corrected;
 	drop bene_death_dt_1;
 run;
 
-*create death dataset; 
+* create death dataset; 
 data raw.enrollee65_dead_ndi_0008; 
 	format year BEST12.; 
 	set raw.enrollee65_ndi_0008_corrected;
@@ -51,14 +51,14 @@ data raw.enrollee65_dead_ndi_0008;
 		RECORD_COND_5 RECORD_COND_6 RECORD_COND_7 RECORD_COND_8;
 run;
 
-*15,863,059;
+* 15,863,059;
 proc sql;
 	title 'distinct death - death date';
 	select count(distinct bene_id)
 	from raw.enrollee65_dead_ndi_0008;
 quit;
 
-*create death dataset with ICD Code;
+* create death dataset with ICD Code;
 data raw.enrollee65_dead_ndi_0008_icd; 
 	format year BEST12.; 
 	set raw.enrollee65_ndi_0008_corrected;
@@ -70,7 +70,7 @@ data raw.enrollee65_dead_ndi_0008_icd;
 		RECORD_COND_5 RECORD_COND_6 RECORD_COND_7 RECORD_COND_8;
 run;
 
-*15,716,449;
+* 15,716,449;
 proc sql;
 	title 'distinct death - icd';
 	select count(distinct bene_id)
