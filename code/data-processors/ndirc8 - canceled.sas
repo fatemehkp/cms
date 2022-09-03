@@ -12,7 +12,7 @@ ods listing;
 
 data enrollee_ndi; 
 	format year BEST12.; 
-	set raw.enrollee65_ndi_0008_corrected;
+	set raw.enrollee65_ndi_0008;
 	YEAR=BENE_ENROLLMT_REF_YR;
 	keep BENE_ID BENE_DEATH_DT BENE_SEX_IDENT_CD BENE_RACE_CD
 		 ZIP_CODE YEAR MONTH ENROLLEE_AGE ICD_CODE

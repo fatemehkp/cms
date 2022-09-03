@@ -1,12 +1,12 @@
 #!/bin/bash
 #set a job name  
-#SBATCH --job-name=cmstotal
+#SBATCH --job-name=cms-icd-rc
 #################  
 #a file for job output, you can check job progress
-#SBATCH --output=cmstotal.out
+#SBATCH --output=cms-icd-rc.out
 #################
 # a file for errors from the job
-#SBATCH --error=cmstotal.err
+#SBATCH --error=cms-icd-rc.err
 #################
 #time you think you need; default is one day
 #in minutes in this case, hh:mm:ss
@@ -24,11 +24,11 @@
 #SBATCH -N 1
 #################
 
-sas cmstotal -work /scratch/fatemehkp/projects/CMS/code
+sas cms-icd-rc -work /scratch/fatemehkp/projects/CMS/code
 
 cd $work
 
 
-sas cmstotal
+sas cms-icd-rc
 
 

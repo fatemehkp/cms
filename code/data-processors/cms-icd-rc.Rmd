@@ -1,0 +1,257 @@
+---
+title: "CMS ICD RC"
+author: "Fatemeh Kazemi"
+date: "8/16/2022"
+output: html_document
+---
+
+# notes
+https://www.icd10data.com/ICD10CM/Codes
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load packages}
+  library(tidyverse)
+  library(here)
+```
+
+```{r load data}
+load(here('data', 'raw','cms-icd-rc.RDa'))
+load(here('data', 'processed', 'cms-icd-rc-decoded.RDa'))
+```
+
+```{r}
+cuz <- c("cvd","ihd","chf","cbv",
+         "resp","copd","pneu","uri","lri","ards",
+         "canc","lungc",
+         "seps",
+         "demn","VaD","UsD", 
+         "nerv","PD","AD","NeD","MS", 
+         "diabt","diabt1","diabt2", 
+         "kidn")
+
+cuz.o <- c("cvd","ihd","chf","cbv","cvd_o",
+         "resp","copd","pneu","uri","lri","ards","resp_o",
+         "canc","lungc","canc_o",
+         "seps",
+         "demn","VaD","UsD","demn_o", 
+         "nerv","PD","AD","NeD","MS", 
+         "diabt","diabt1","diabt2", 
+         "kidn", "other")
+
+rc.cat <- c("RECORD_COND_1", "RECORD_COND_2", "RECORD_COND_3", "RECORD_COND_4",
+                "RECORD_COND_5", "RECORD_COND_6", "RECORD_COND_7", "RECORD_COND_8")
+```
+
+# done and saved
+```{r load csv file}
+# dt.cms.icd.rc <- read.csv(
+#   here('data', 'raw', 'cms-icd-rc.csv'))
+# 
+# save(dt.cms.icd.rc, file = here('data', 'raw', 'cms-icd-rc.RDa'))
+```
+
+```{r}
+# done and saved
+dt <- dt.cms.icd.rc %>%
+  mutate(
+    ### ICD main causes
+    ICD_CODE_main = 
+      case_when(str_detect(ICD_CODE, "I") ~ "cvd",
+                str_detect(ICD_CODE, "J") ~ "resp",
+                str_detect(ICD_CODE, "C|D") ~ "canc",
+                str_detect(ICD_CODE, "A40|A41") ~ "seps",
+                str_detect(ICD_CODE, "F01|F02|F03") ~ "demn",
+                str_detect(ICD_CODE, "G20|G30|G31|G35") ~ "nerv",
+                str_detect(ICD_CODE, "E10|E11") ~ "diabt",
+                str_detect(ICD_CODE, "N18|N19") ~ "kidn", 
+                TRUE ~ "other"),
+    ### ICD sub causes
+    ICD_CODE_sub = 
+    ### cvd
+      case_when(str_detect(ICD_CODE, "I20|I21|I22|I23|I24|I25") ~ "ihd",
+                str_detect(ICD_CODE, "I50") ~ "chf",
+                str_detect(ICD_CODE, "I6") ~ "cbv",
+                str_detect(ICD_CODE, "I") ~ "cvd_o",
+    ### resp
+                str_detect(ICD_CODE, "J40|J41|J42|J43|J44") ~ "copd",
+                str_detect(ICD_CODE, "J12|J13|J14|J15|J16|J17|J18") ~ "pneu", 
+                str_detect(ICD_CODE, "J00|J01|J02|J03|J04|J05|J06") ~ "uri",
+                str_detect(ICD_CODE, "J09|J10|J11|J12|J13|J14|J15|J16|J17|J18|J20|J21|J22") ~ "lri",
+                str_detect(ICD_CODE, "J80") ~ "ards",
+                str_detect(ICD_CODE, "J") ~ "resp_o",
+    ### cancer
+                str_detect(ICD_CODE, "C34") ~ "lungc",  
+                str_detect(ICD_CODE, "C|D") ~ "canc_o",
+    ### sepsis
+                str_detect(ICD_CODE, "A40|A41") ~ "seps",
+    ### dementia
+                str_detect(ICD_CODE, "F01") ~ "VaD",
+                str_detect(ICD_CODE, "F03") ~ "UsD",
+                str_detect(ICD_CODE, "F01|F02|F03") ~ "demn_o",
+    ### nervous system
+                str_detect(ICD_CODE, "G20") ~ "PD",
+                str_detect(ICD_CODE, "G30") ~ "AD",
+                str_detect(ICD_CODE, "G31") ~ "NeD",
+                str_detect(ICD_CODE, "G35") ~ "MS",
+    ### diabetes
+                str_detect(ICD_CODE, "E10") ~ "diabt1",
+                str_detect(ICD_CODE, "E11") ~ "diabt2",
+    ### kidney
+                str_detect(ICD_CODE, "N18|N19") ~ "kidn",
+                TRUE ~ "other"),
+    ICD_CODE_main = factor(ICD_CODE_main, levels = cuz.o),
+    ICD_CODE_sub = factor(ICD_CODE_sub, levels = cuz.o)
+    )
+```
+
+```{r}
+# done and saved
+for (RCcat in rc.cat){
+  ### RC main causes
+  dt[,paste0(RCcat,'_main',sep="")] <- 
+    case_when(str_detect(dt[,RCcat], "I") ~ "cvd",
+              str_detect(dt[,RCcat], "J") ~ "resp",
+              str_detect(dt[,RCcat], "C|D") ~ "canc",
+              str_detect(dt[,RCcat], "A40|A41") ~ "seps",
+              str_detect(dt[,RCcat], "F01|F02|F03") ~ "demn",
+              str_detect(dt[,RCcat], "G20|G30|G31|G35") ~ "nerv",
+              str_detect(dt[,RCcat], "E10|E11") ~ "diabt",
+              str_detect(dt[,RCcat], "N18|N19") ~ "kidn",
+              TRUE ~ "other") # as.character(dt[,RCcat])
+
+  ### RC sub causes
+  dt[,paste0(RCcat,'_sub',sep="")] <- 
+    ### cvd
+    case_when(str_detect(dt[,RCcat], "I20|I21|I22|I23|I24|I25") ~ "ihd",
+              str_detect(dt[,RCcat], "I50") ~ "chf",
+              str_detect(dt[,RCcat], "I6") ~ "cbv",
+              str_detect(dt[,RCcat], "I") ~ "cvd_o",
+    ### resp
+              str_detect(dt[,RCcat], "J40|J41|J42|J43|J44") ~ "copd",
+              str_detect(dt[,RCcat], "J12|J13|J14|J15|J16|J17|J18") ~ "pneu",
+              str_detect(dt[,RCcat], "J00|J01|J02|J03|J04|J05|J06") ~ "uri",
+              str_detect(dt[,RCcat], "J09|J10|J11|J12|J13|J14|J15|J16|J17|J18|J20|J21|J22") ~ "lri",
+              str_detect(dt[,RCcat], "J80") ~ "ards",
+              str_detect(dt[,RCcat], "J") ~ "resp_o",
+    ### cancer
+              str_detect(dt[,RCcat], "C34") ~ "lungc", 
+              str_detect(dt[,RCcat], "C|D") ~ "canc_o",
+    ### sepsis
+              str_detect(dt[,RCcat], "A40|A41") ~ "seps", 
+    ### dementia
+              str_detect(dt[,RCcat], "F01") ~ "VaD",
+              str_detect(dt[,RCcat], "F03") ~ "UsD",
+              str_detect(dt[,RCcat], "F01|F02|F03") ~ "demn_o",
+    ### nervous
+              str_detect(dt[,RCcat], "G20") ~ "PD",
+              str_detect(dt[,RCcat], "G30") ~ "AD",
+              str_detect(dt[,RCcat], "G31") ~ "NeD",
+              str_detect(dt[,RCcat], "G35") ~ "MS",
+    ### diabetes
+              str_detect(dt[,RCcat], "E10") ~ "diabt1",
+              str_detect(dt[,RCcat], "E11") ~ "diabt2",
+    ### kidney
+              str_detect(dt[,RCcat], "N18|N19") ~ "kidn",
+              TRUE ~ "other") # as.character(dt[,RCcat])
+}
+
+dt.cms.icd.rc.decoded <- dt %>% 
+  mutate(across(.cols = RECORD_COND_1_main:RECORD_COND_8_sub, 
+                ~factor(.x, levels = cuz.o, labels = cuz.o))) %>% 
+  select(-ICD_CODE, -(RECORD_COND_1:RECORD_COND_8))
+
+save(dt.cms.icd.rc.decoded, 
+     file = here('data', 'processed', 'cms-icd-rc-decoded.RDa'))
+write.csv(dt.cms.icd.rc.decoded, 
+          file = here('data', 'processed', 'cms-icd-rc-decoded.csv'))
+```
+
+
+```{r}
+dt.cms.icd.rc.decoded %>% 
+  filter(ICD_CODE_main %in% cuz) %>% 
+  group_by(ICD_CODE_main) %>% 
+  summarise(n = n())
+```
+
+
+```{r}
+dt.cms.icd.rc.decoded %>% 
+  filter(ICD_CODE_sub %in% cuz.o) %>% 
+  group_by(ICD_CODE_sub) %>% 
+  summarise(n = n())
+```
+
+
+```{r}
+dt.cms.icd.rc.decoded %>% 
+  filter(RECORD_COND_1_main %in% cuz) %>% 
+  group_by(RECORD_COND_1_main) %>% 
+  summarise(n = n())
+```
+
+
+```{r}
+dt.cms.icd.rc.decoded %>% 
+  filter(RECORD_COND_1_sub %in% cuz.o) %>% 
+  group_by(RECORD_COND_1_sub) %>% 
+  summarise(n = n())
+```
+
+```{r}
+dt.cms.icd.rc.decoded %>% 
+  filter(ICD_CODE_main == "seps") %>% # 228832
+  filter(RECORD_COND_1_main == "seps") %>% # 228091
+  nrow()
+
+dt.cms.icd.rc.decoded %>% 
+  filter(RECORD_COND_1_main == "seps") %>% # 700284
+  filter(ICD_CODE_main == "seps") %>% # 228091
+  nrow()
+
+dt.cms.icd.rc.decoded %>% 
+  filter(RECORD_COND_1_main == "seps") %>% # 700284
+  group_by(ICD_CODE_main) %>%
+  summarise(n = n()) %>% 
+  filter(ICD_CODE_main == "kidn") 
+
+# cvd 100133
+# resp 77379
+# canc 73994
+# kidn 17319
+```
+
+```{r}
+x <- dt.cms.icd.rc.decoded %>% 
+  select(contains("main")) %>% 
+  group_by(ICD_CODE_main) %>% 
+  summarise(n = n())
+
+y <- dt.cms.icd.rc.decoded %>% 
+  select(contains("main")) %>% 
+  select(contains("RECORD")) %>% 
+  group_by(RECORD_COND_1_main, RECORD_COND_2_main, RECORD_COND_3_main, RECORD_COND_4_main, RECORD_COND_5_main, RECORD_COND_6_main, RECORD_COND_7_main, RECORD_COND_8_main) %>% 
+  summarise(n = n()) %>% 
+  filter(!is.na(RECORD_COND_1_main))
+
+xx <- dt.cms.icd.rc.decoded %>% 
+  select(contains("sub")) %>% 
+  group_by(ICD_CODE_sub) %>% 
+  summarise(n = n())
+
+yy <- dt.cms.icd.rc.decoded %>% 
+  select(contains("sub")) %>% 
+  select(contains("RECORD")) %>% 
+  group_by(RECORD_COND_1_sub, RECORD_COND_2_sub, RECORD_COND_3_sub, RECORD_COND_4_sub) %>% 
+  summarise(n = n()) %>% 
+  filter(!is.na(RECORD_COND_1_sub)) %>% 
+  filter(!(RECORD_COND_1_sub == "other" & RECORD_COND_2_sub == "other" &
+             RECORD_COND_3_sub == "other" & RECORD_COND_4_sub == "other")) %>% 
+  mutate(all = paste(RECORD_COND_1_sub, RECORD_COND_2_sub, RECORD_COND_3_sub, RECORD_COND_4_sub))
+
+
+```
+
+, RECORD_COND_5_sub, RECORD_COND_6_sub, RECORD_COND_7_sub, RECORD_COND_8_sub

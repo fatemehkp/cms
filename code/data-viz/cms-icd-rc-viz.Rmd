@@ -1,0 +1,143 @@
+---
+title: "CMS ICD RC"
+author: "Fatemeh Kazemi"
+date: "8/16/2022"
+output: html_document
+---
+
+# notes
+https://www.icd10data.com/ICD10CM/Codes
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load packages}
+  library(tidyverse)
+  library(here)
+```
+
+```{r load data}
+load(here('data', 'raw','cms-icd-rc.RDa'))
+load(here('data', 'processed', 'cms-icd-rc-decoded.RDa'))
+```
+
+```{r}
+cuz <- c("cvd","ihd","chf","cbv",
+         "resp","copd","pneu","uri","lri","ards",
+         "canc","lungc",
+         "seps",
+         "demn","VaD","UsD", 
+         "nerv","PD","AD","NeD","MS", 
+         "diabt","diabt1","diabt2", 
+         "kidn")
+
+cuz.m <- c("cvd","resp","canc",
+         "seps","demn","nerv",
+         "diabt","kidn")
+```
+
+```{r}
+dt1 <- dt.cms.icd.rc.decoded %>% 
+  filter(ICD_CODE_main %in% cuz) %>% 
+  group_by(ICD_CODE_main) %>% 
+  summarise(n = n()) %>% 
+  arrange(n)
+
+dt2 <- dt.cms.icd.rc.decoded %>% 
+  filter(ICD_CODE_sub %in% cuz) %>% 
+  group_by(ICD_CODE_main, ICD_CODE_sub) %>% 
+  summarise(n = n()) %>% 
+  arrange(n)
+  
+dt3 <- dt.cms.icd.rc.decoded %>% 
+  filter(ICD_CODE_main %in% cuz) %>% 
+  select(contains("main", ignore.case = TRUE, vars = NULL)) %>% 
+  group_by(ICD_CODE_main) %>% 
+  summarise(n = n(ICD_CODE_main[RECORD_COND_1_main == "cvd"])) %>% 
+  arrange(n)
+
+
+dt3 <- dt.cms.icd.rc.decoded %>% 
+  filter(ICD_CODE_main == "kidn" & RECORD_COND_3_main %in% cuz) %>% 
+  select(contains("main", ignore.case = TRUE, vars = NULL)) %>% 
+  group_by(RECORD_COND_3_main) %>% 
+  summarise(n = n()) %>% 
+  arrange(n)
+
+dt <- dt.cms.icd.rc.decoded %>% 
+  select(contains("sub", ignore.case = TRUE, vars = NULL))
+
+
+for (cuz0 in cuz){
+  for (RCcat in rc.cat){
+    dt11 <- dt %>% 
+      filter(ICD_CODE_sub == cuz & dt[,RCcat] %in% cuz) %>% 
+      select(paste0(RCcat,sep=""))
+      #group_by(paste0(RCcat,sep="")) %>% 
+      #summarise(n = n()) %>% 
+      #arrange(n)
+  }
+}
+
+rc.cat <- c("RECORD_COND_1_main", "RECORD_COND_2_main", "RECORD_COND_3_main",
+            "RECORD_COND_4_main", "RECORD_COND_5_main", "RECORD_COND_6_main",
+            "RECORD_COND_7_main", "RECORD_COND_8_main")
+
+rc.cat <- c("RECORD_COND_1_main", "RECORD_COND_2_main", "RECORD_COND_3_main",
+            "RECORD_COND_4_main", "RECORD_COND_5_main", "RECORD_COND_6_main",
+            "RECORD_COND_7_main", "RECORD_COND_8_main")
+
+groups <- c(quo("RECORD_COND_1_main"), quo("RECORD_COND_2_main"),
+            quo("RECORD_COND_3_main"), quo("RECORD_COND_4_main"),
+            quo("RECORD_COND_5_main"), quo("RECORD_COND_6_main"),
+            quo("RECORD_COND_7_main"), quo("RECORD_COND_8_main")
+            ) 
+
+
+
+x <- dt.cms.icd.rc.decoded %>% 
+  select(ICD_CODE_main, ICD_CODE_sub, contains("sub")) %>% 
+  mutate_all(
+    funs(case_when(. %in% cuz ~ .,
+                   T ~ NA_character_))) %>% 
+  pivot_longer(cols = contains("Record"),
+               names_to = "Att",
+               values_to = "Amo",
+               values_drop_na = T)
+
+y <- dt.cms.icd.rc.decoded %>% 
+  select(ICD_CODE_main, ICD_CODE_sub, contains("main")) %>% 
+  mutate_all(
+    funs(case_when(. %in% cuz ~ .,
+                   T ~ NA_character_))) %>% 
+  pivot_longer(cols = contains("Record"),
+               names_to = "Att",
+               values_to = "Amo",
+               values_drop_na = T)
+
+z <- dt.cms.icd.rc.decoded %>% 
+  select(contains("main")|contains("sub")) %>% 
+  mutate_all(
+    funs(case_when(. %in% cuz ~ .,
+                   T ~ NA_character_))) %>% 
+  pivot_longer(cols = contains("sub"),
+               names_to = "Att",
+               values_to = "Amo",
+               values_drop_na = T)
+
+x1 <- x %>% 
+  group_by(ICD_CODE_main, Att, Amo) %>% 
+  summarise(n = n())
+
+x2 <- x %>% 
+  group_by(ICD_CODE_main, ICD_CODE_sub, Att, Amo) %>% 
+  summarise(n = n())
+
+z1 <- z %>% 
+  group_by(ICD_CODE_main, Att, Amo) %>% 
+  summarise(n = n())
+
+library(gmodels)
+g <- CrossTable(x$ICD_CODE_main, x$Amo)  
+```
+

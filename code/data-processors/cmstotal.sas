@@ -1,3 +1,5 @@
+* Re-done 08-15-2022;
+
 libname raw '/scratch/fatemehkp/projects/CMS/data/raw';
 
 
@@ -24,5 +26,5 @@ proc sql;
 	title 'Total unidentified sex CMS enrollee 2000-2008';
 	select count(distinct zip_code) as num_zipcode
 	from raw.enrollee65_ndi_0008
-	where bene_sex_ident_cd <> 1 or bene_sex_ident_cd <> 2;
+	where bene_sex_ident_cd = 0;
 quit;
